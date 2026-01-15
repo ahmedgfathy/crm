@@ -8,12 +8,13 @@ type ActionState = { ok: boolean; error?: string };
 export default async function SubscriptionPage({
   searchParams,
 }: {
-  searchParams?: { mobile?: string; email?: string; reset?: string; request?: string };
+  searchParams: Promise<{ mobile?: string; email?: string; reset?: string; request?: string }>;
 }) {
-  const requestId = searchParams?.request?.trim();
-  const mobile = searchParams?.mobile?.trim();
-  const email = searchParams?.email?.trim();
-  const reset = searchParams?.reset === "1";
+  const params = await searchParams;
+  const requestId = params?.request?.trim();
+  const mobile = params?.mobile?.trim();
+  const email = params?.email?.trim();
+  const reset = params?.reset === "1";
 
   const payload = await (async () => {
     if (requestId) {

@@ -12,12 +12,13 @@ async function resetAction(formData: FormData) {
   redirect(`/subscription?reset=1&mobile=${encodeURIComponent(mobile)}`);
 }
 
-export default function ResetPage({
+export default async function ResetPage({
   searchParams,
 }: {
-  searchParams?: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const error = searchParams?.error === "missing" ? "Mobile is required." : null;
+  const params = await searchParams;
+  const error = params?.error === "missing" ? "Mobile is required." : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">

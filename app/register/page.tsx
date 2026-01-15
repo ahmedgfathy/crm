@@ -9,24 +9,25 @@ async function registerAction(formData: FormData) {
   const email = (formData.get("email") as string)?.trim();
   const company = (formData.get("company") as string)?.trim();
   const password = (formData.get("password") as string)?.trim();
-  if (!mobile) {
+  if (!mobile || !password) {
     redirect("/register?error=missing");
   }
   const request = await createSignupRequest({
     mobile,
     email: email || null,
     company: company || "Unnamed Company",
-    password: password || null,
+    password,
   });
   redirect(`/subscription?request=${request.id}`);
 }
 
-export default function RegisterPage({
+export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams?: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const error = searchParams?.error === "missing" ? "Mobile is required." : null;
+  const params = await searchParams;
+  const error = params?.error === "missing" ? "Mobile is required." : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">
