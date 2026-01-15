@@ -135,6 +135,26 @@ model Subscription {
   startedAt  DateTime @default(now())
 }
 
+model SubscriptionPlan {
+  id           String   @id @default(cuid())
+  name         String
+  category     String?
+  description  String?
+  priceAmount  Int?
+  currency     String   @default("EGP")
+  billingCycle String   @default("monthly")
+  usersLimit   Int?
+  storageGB    Int?
+  bandwidthGB  Int?
+  propertiesLimit Int?
+  leadsLimit   Int?
+  estatesLimit Int?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  signupRequests SignupRequest[]
+}
+
 model Folder {
   id         String         @id @default(cuid())
   name       String
@@ -178,6 +198,8 @@ model SignupRequest {
   email     String?
   company   String
   password  String?
+  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  subscriptionPlanId String?
   status    String   @default("PENDING")
   note      String?
   createdAt DateTime @default(now())

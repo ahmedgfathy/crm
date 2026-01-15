@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { getSession, logout } from "../lib/auth";
 import Logo from "./Logo";
+import ThemeToggle from "./ThemeToggle";
+import SidebarToggle from "./SidebarToggle";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "🏠" },
@@ -25,14 +27,14 @@ const topActions = [
 
 export default async function DashboardShell({ children }: { children: ReactNode }) {
   const session = await getSession();
-  const isSuperAdmin = session?.mobile === "01002778090";
+  const isSuperAdmin = session?.role === "owner";
   const items = isSuperAdmin
     ? [...navItems, { label: "Administration", href: "/administration", icon: "🛡️" }]
     : navItems;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 grid grid-cols-[240px_1fr]">
-      <aside className="border-r border-white/10 bg-slate-950/90 backdrop-blur flex flex-col">
+    <div className="dashboard-shell min-h-screen grid grid-cols-[240px_1fr]">
+      <aside className="border-r backdrop-blur flex flex-col">
         <div className="h-14 px-6 flex items-center text-lg font-semibold">
           <Logo href="/dashboard" size="sm" />
         </div>
@@ -41,19 +43,21 @@ export default async function DashboardShell({ children }: { children: ReactNode
             <Link
               key={item.label}
               href={item.href}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm font-medium"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm font-medium nav-item"
             >
               <span aria-hidden="true">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="nav-label">{item.label}</span>
             </Link>
           ))}
         </nav>
       </aside>
 
       <div className="flex flex-col min-h-screen">
-        <header className="h-14 border-b border-white/10 bg-slate-950/80 backdrop-blur flex items-center justify-between px-6">
+        <header className="h-14 border-b backdrop-blur flex items-center justify-between px-6">
           <div className="text-sm text-slate-300">Contaboo</div>
           <div className="flex items-center gap-2">
+            <SidebarToggle />
+            <ThemeToggle />
             {topActions.map((action) =>
               action.href ? (
                 <Link
@@ -79,12 +83,12 @@ export default async function DashboardShell({ children }: { children: ReactNode
               )
             )}
             <div className="ml-2 h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-sm font-semibold">
-              SA
+              {isSuperAdmin ? "SA" : "MB"}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 px-8 py-10 bg-gradient-to-b from-slate-950 to-slate-900">
+        <main className="flex-1 px-8 py-10">
           {children}
         </main>
       </div>

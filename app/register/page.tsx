@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import InternalHeader from "../../components/InternalHeader";
 import { createSignupRequest } from "../../lib/signupStore";
+import { listActiveSubscriptionPlans } from "../../lib/subscriptionPlans";
 
 async function registerAction(formData: FormData) {
   "use server";
@@ -9,6 +10,7 @@ async function registerAction(formData: FormData) {
   const email = (formData.get("email") as string)?.trim();
   const company = (formData.get("company") as string)?.trim();
   const password = (formData.get("password") as string)?.trim();
+   const planId = (formData.get("planId") as string)?.trim();
   if (!mobile || !password) {
     redirect("/register?error=missing");
   }
@@ -17,6 +19,7 @@ async function registerAction(formData: FormData) {
     email: email || null,
     company: company || "Unnamed Company",
     password,
+    subscriptionPlanId: planId || null,
   });
   redirect(`/subscription?request=${request.id}`);
 }
@@ -28,6 +31,8 @@ export default async function RegisterPage({
 }) {
   const params = await searchParams;
   const error = params?.error === "missing" ? "Mobile is required." : null;
+  const plans = await listActiveSubscriptionPlans();
+  const hasPlans = plans.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">
@@ -100,7 +105,35 @@ export default async function RegisterPage({
               <p className="text-xs text-slate-400">We store it for the admin to provision; final auth can be set post-approval.</p>
             </div>
 
-            <button type="submit" className="btn-primary w-full justify-center">
+            <div className="space-y-2">
+              <label className="text-sm text-slate-200" htmlFor="planId">
+                Choose a subscription plan
+              </label>
+              {hasPlans ? (
+                <select
+                  id="planId"
+                  name="planId"
+                  required
+                  className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  defaultValue={plans[0]?.id}
+                >
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} — {plan.currency}{plan.priceAmount ? ` ${plan.priceAmount}` : ""} / {plan.billingCycle}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 text-amber-100 px-4 py-3 text-sm">
+                  No active plans yet. Please contact support.
+                </div>
+              )}
+              {hasPlans && (
+                <p className="text-xs text-slate-400">Limits vary by plan (users, storage, bandwidth, properties, leads).</p>
+              )}
+            </div>
+
+            <button type="submit" className="btn-primary w-full justify-center" disabled={!hasPlans}>
               Continue to subscription
             </button>
           </form>

@@ -25,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        data-sidebar="collapsed"
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}

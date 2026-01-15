@@ -39,8 +39,14 @@ export async function getSession(): Promise<Session | null> {
   if (!value) return null;
   try {
     const parsed = JSON.parse(value) as Session;
-    if (parsed?.role === "owner" && parsed?.mobile) {
-      return parsed;
+    if (parsed?.role === "owner" && parsed?.mobile === OWNER_MOBILE) {
+      return { role: "owner", mobile: OWNER_MOBILE };
+    }
+    if (parsed?.role === "customer" && parsed?.requestId && parsed?.mobile) {
+      const req = await prisma.signupRequest.findUnique({ where: { id: parsed.requestId } });
+      if (req?.status === "APPROVED") {
+        return { role: "customer", mobile: parsed.mobile, requestId: parsed.requestId };
+      }
     }
   } catch (err) {
     return null;

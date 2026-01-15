@@ -7,6 +7,7 @@ export async function createSignupRequest(params: {
   email?: string | null;
   company: string;
   password?: string | null;
+  subscriptionPlanId?: string | null;
 }) {
   const existing = await prisma.signupRequest.findFirst({
     where: { mobile: params.mobile, status: "PENDING" },
@@ -20,6 +21,7 @@ export async function createSignupRequest(params: {
         email: params.email ?? existing.email,
         company: params.company,
         password: params.password ?? existing.password,
+        subscriptionPlanId: params.subscriptionPlanId ?? existing.subscriptionPlanId,
       },
     });
   }
@@ -30,12 +32,24 @@ export async function createSignupRequest(params: {
       email: params.email,
       company: params.company,
       password: params.password,
+      subscriptionPlanId: params.subscriptionPlanId ?? null,
     },
   });
 }
 
 export async function listSignupRequests() {
-  return prisma.signupRequest.findMany({ orderBy: { createdAt: "desc" } });
+  return prisma.signupRequest.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { subscriptionPlan: true },
+  });
+}
+
+export async function updateSignupPlan(id: string, subscriptionPlanId: string | null) {
+  try {
+    return await prisma.signupRequest.update({ where: { id }, data: { subscriptionPlanId } });
+  } catch (err) {
+    return null;
+  }
 }
 
 export async function updateSignupStatus(id: string, status: SignupStatus, note?: string | null) {
