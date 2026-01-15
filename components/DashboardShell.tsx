@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { getSession, logout } from "../lib/auth";
+import Logo from "./Logo";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "🏠" },
@@ -32,7 +33,9 @@ export default async function DashboardShell({ children }: { children: ReactNode
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 grid grid-cols-[240px_1fr]">
       <aside className="border-r border-white/10 bg-slate-950/90 backdrop-blur flex flex-col">
-        <div className="h-14 px-6 flex items-center text-lg font-semibold">Contaboo CRM</div>
+        <div className="h-14 px-6 flex items-center text-lg font-semibold">
+          <Logo href="/dashboard" size="sm" />
+        </div>
         <nav className="flex-1 px-3 py-2 space-y-1">
           {items.map((item) => (
             <Link

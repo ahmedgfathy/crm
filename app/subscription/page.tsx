@@ -1,6 +1,9 @@
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import InternalHeader from "../../components/InternalHeader";
-import { getSignupRequest } from "../../lib/signupStore";
+import { getSignupRequest, updateSignupContact } from "../../lib/signupStore";
+
+type ActionState = { ok: boolean; error?: string };
 
 export default async function SubscriptionPage({
   searchParams,
@@ -17,11 +20,19 @@ export default async function SubscriptionPage({
       const req = await getSignupRequest(requestId);
       if (req) return { mobile: req.mobile, email: req.email, company: req.company, status: req.status };
     }
-    if (!mobile) {
-      redirect("/register?error=missing");
-    }
     return { mobile, email, company: "Pending company", status: "PENDING" as const };
   })();
+
+  async function updateContactAction(formData: FormData): Promise<void> {
+    "use server";
+    const id = (formData.get("id") as string)?.trim();
+    const newMobile = (formData.get("mobile") as string)?.trim();
+    const newEmail = (formData.get("email") as string)?.trim() || null;
+    if (!id || !newMobile) return;
+    await updateSignupContact(id, { mobile: newMobile, email: newEmail });
+    revalidatePath("/subscription");
+    redirect(`/subscription?request=${id}`);
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">
@@ -49,10 +60,11 @@ export default async function SubscriptionPage({
             <div className="mt-1 text-white">{payload.company}</div>
           </div>
 
-          {!mobile && (
+          {!payload.mobile && (
             <div className="card border-amber-400/30 bg-amber-400/10 text-amber-50 p-4 space-y-3 text-sm">
               <p className="font-semibold text-white">We need your mobile to proceed.</p>
-              <form method="get" className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+              <form action={updateContactAction} className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+                <input type="hidden" name="id" value={requestId || ""} />
                 <label className="space-y-1 text-slate-200 text-sm">
                   <span className="block text-xs text-slate-400">Mobile</span>
                   <input

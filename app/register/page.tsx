@@ -12,7 +12,12 @@ async function registerAction(formData: FormData) {
   if (!mobile) {
     redirect("/register?error=missing");
   }
-  const request = await createSignupRequest({ mobile, email: email || null, company: company || "Unnamed Company", password: password || null });
+  const request = await createSignupRequest({
+    mobile,
+    email: email || null,
+    company: company || "Unnamed Company",
+    password: password || null,
+  });
   redirect(`/subscription?request=${request.id}`);
 }
 

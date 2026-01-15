@@ -1,65 +1,73 @@
-import { randomUUID } from "crypto";
+import { prisma } from "./prisma";
 
 export type SignupStatus = "PENDING" | "APPROVED" | "REJECTED";
-
-export type SignupRequest = {
-  id: string;
-  mobile: string;
-  email?: string | null;
-  company: string;
-  password?: string | null;
-  status: SignupStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  note?: string | null;
-};
-
-const requests: SignupRequest[] = [];
 
 export async function createSignupRequest(params: {
   mobile: string;
   email?: string | null;
   company: string;
   password?: string | null;
-}): Promise<SignupRequest> {
-  const now = new Date();
-  const existing = requests.find((r) => r.mobile === params.mobile && r.status === "PENDING");
+}) {
+  const existing = await prisma.signupRequest.findFirst({
+    where: { mobile: params.mobile, status: "PENDING" },
+    orderBy: { createdAt: "desc" },
+  });
+
   if (existing) {
-    existing.email = params.email ?? existing.email;
-    existing.company = params.company;
-    existing.password = params.password ?? existing.password;
-    existing.updatedAt = now;
-    return existing;
+    return prisma.signupRequest.update({
+      where: { id: existing.id },
+      data: {
+        email: params.email ?? existing.email,
+        company: params.company,
+        password: params.password ?? existing.password,
+      },
+    });
   }
 
-  const created: SignupRequest = {
-    id: randomUUID(),
-    mobile: params.mobile,
-    email: params.email ?? null,
-    company: params.company,
-    password: params.password ?? null,
-    status: "PENDING",
-    createdAt: now,
-    updatedAt: now,
-    note: null,
-  };
-  requests.unshift(created);
-  return created;
+  return prisma.signupRequest.create({
+    data: {
+      mobile: params.mobile,
+      email: params.email,
+      company: params.company,
+      password: params.password,
+    },
+  });
 }
 
-export async function listSignupRequests(): Promise<SignupRequest[]> {
-  return [...requests];
+export async function listSignupRequests() {
+  return prisma.signupRequest.findMany({ orderBy: { createdAt: "desc" } });
 }
 
 export async function updateSignupStatus(id: string, status: SignupStatus, note?: string | null) {
-  const found = requests.find((r) => r.id === id);
-  if (!found) return null;
-  found.status = status;
-  found.updatedAt = new Date();
-  if (note !== undefined) found.note = note;
-  return found;
+  try {
+    return await prisma.signupRequest.update({
+      where: { id },
+      data: { status, note },
+    });
+  } catch (err) {
+    return null;
+  }
 }
 
-export async function getSignupRequest(id: string): Promise<SignupRequest | null> {
-  return requests.find((r) => r.id === id) ?? null;
+export async function getSignupRequest(id: string) {
+  return prisma.signupRequest.findUnique({ where: { id } });
+}
+
+export async function updateSignupContact(id: string, params: { mobile: string; email?: string | null }) {
+  try {
+    return await prisma.signupRequest.update({
+      where: { id },
+      data: { mobile: params.mobile, email: params.email },
+    });
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function updateSignupPassword(id: string, password: string) {
+  try {
+    return await prisma.signupRequest.update({ where: { id }, data: { password } });
+  } catch (err) {
+    return null;
+  }
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { authenticateOwner, SESSION_COOKIE } from "../../lib/auth";
+import { authenticateUser, SESSION_COOKIE } from "../../lib/auth";
 import InternalHeader from "../../components/InternalHeader";
 
 async function loginAction(formData: FormData) {
@@ -20,13 +20,13 @@ async function loginAction(formData: FormData) {
     redirect("/login?error=missing");
   }
 
-  const ok = authenticateOwner(mobile, password);
-  if (!ok) {
+  const session = await authenticateUser(mobile, password);
+  if (!session) {
     redirect("/login?error=invalid");
   }
 
   const store = await cookies();
-  store.set(SESSION_COOKIE, JSON.stringify({ role: "owner", mobile }), {
+  store.set(SESSION_COOKIE, JSON.stringify(session), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -107,9 +107,6 @@ export default async function LoginPage({
             </Link>
           </div>
 
-          <div className="text-center text-xs text-slate-400">
-            Owner login only: mobile 01002778090
-          </div>
         </div>
       </main>
     </div>

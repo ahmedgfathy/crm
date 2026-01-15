@@ -1,12 +1,11 @@
 import Link from "next/link";
+import Logo from "./Logo";
 
 export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/70 backdrop-blur">
       <div className="container flex items-center justify-between py-4">
-        <Link href="/" className="text-xl font-bold text-white">
-          Contaboo
-        </Link>
+        <Logo href="/" size="md" />
 
         <nav className="hidden md:flex items-center gap-6 text-lg text-slate-200">
           <a href="#product" aria-label="Product" className="hover:text-white" title="Product">
