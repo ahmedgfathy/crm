@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+  createdAt DateTime @default(now())
+}
+
+model Company {
+  id          String      @id @default(cuid())
+  name        String
+  domain      String?
+  users       User[]
+  properties  Property[]
+  leads       Lead[]
+  folders     Folder[]
+  documents   DocumentFile[]
+  shareLinks  ShareLink[]
+  opportunities Opportunity[]
+  subscription Subscription?
+  createdAt   DateTime    @default(now())
+}
+
+model Property {
+  id          String          @id @default(cuid())
+  title       String
+  type        String
+  status      String          @default("AVAILABLE")
+  price       Int?
+  currency    String?         @default("EGP")
+  addressLine String?
+  city        String?
+  country     String?
+  bedrooms    Int?
+  bathrooms   Int?
+  area        Int?
+  areaUnit    String?         @default("sqm")
+  description String?
+  company     Company         @relation(fields: [companyId], references: [id])
+  companyId   String
+  listedAt    DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+}
+
+model Lead {
+  id            String   @id @default(cuid())
+  title         String
+  status        String   @default("NEW")
+  source        String?
+  stage         String?  @default("Prospect")
+  budget        Int?
+  currency      String?  @default("EGP")
+  region        String?
+  contactName   String?
+  contactPhone  String?
+  contactEmail  String?
+  notes         String?
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     String
+  createdAt     DateTime @default(now())
+}
+
+model Opportunity {
+  id          String   @id @default(cuid())
+  title       String
+  stage       String   @default("Qualified")
+  status      String   @default("OPEN")
+  value       Int?
+  currency    String?  @default("EGP")
+  probability Float?   @default(0)
+  closeDate   DateTime?
+  owner       String?
+  notes       String?
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   String
+  createdAt   DateTime @default(now())
+}
+
+model Developer {
+  id        String            @id @default(cuid())
+  name      String
+  contact   String?
+  brief     String?
+  history   String?
+  projects  PrimaryProject[]
+  createdAt DateTime          @default(now())
+}
+
+model PrimaryProject {
+  id          String         @id @default(cuid())
+  name        String
+  region      String?
+  status      String?        @default("Planned")
+  description String?
+  developer   Developer      @relation(fields: [developerId], references: [id])
+  developerId String
+  units       PrimaryUnit[]
+  createdAt   DateTime       @default(now())
+}
+
+model PrimaryUnit {
+  id         String          @id @default(cuid())
+  title      String
+  type       String
+  status     String?         @default("AVAILABLE")
+  price      Int?
+  currency   String?         @default("EGP")
+  bedrooms   Int?
+  bathrooms  Int?
+  area       Int?
+  areaUnit   String?         @default("sqm")
+  region     String?
+  notes      String?
+  project    PrimaryProject  @relation(fields: [projectId], references: [id])
+  projectId  String
+  createdAt  DateTime        @default(now())
+}
+
+model Subscription {
+  id         String   @id @default(cuid())
+  company    Company  @relation(fields: [companyId], references: [id])
+  companyId  String   @unique
+  plan       String
+  priceEGP   Int
+  startedAt  DateTime @default(now())
+}
+
+model Folder {
+  id         String         @id @default(cuid())
+  name       String
+  parent     Folder?        @relation("FolderToFolder", fields: [parentId], references: [id])
+  parentId   String?
+  children   Folder[]       @relation("FolderToFolder")
+  documents  DocumentFile[]
+  company    Company        @relation(fields: [companyId], references: [id])
+  companyId  String
+  createdAt  DateTime       @default(now())
+}
+
+model DocumentFile {
+  id         String      @id @default(cuid())
+  name       String
+  mimeType   String?
+  size       Int?
+  data       Bytes?
+  folder     Folder?     @relation(fields: [folderId], references: [id])
+  folderId   String?
+  company    Company     @relation(fields: [companyId], references: [id])
+  companyId  String
+  shareLinks ShareLink[]
+  createdAt  DateTime    @default(now())
+}
+
+model ShareLink {
+  id          String        @id @default(cuid())
+  token       String        @unique
+  document    DocumentFile  @relation(fields: [documentId], references: [id])
+  documentId  String
+  expiresAt   DateTime?
+  company     Company       @relation(fields: [companyId], references: [id])
+  companyId   String
+  createdAt   DateTime      @default(now())
+}

@@ -1,26 +1,51 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --brand-500: #0ea5a4;
+  --brand-600: #0b8c8b;
+  --brand-700: #0f766e;
+  --brand-800: #0f5f59;
+  --accent: #f97316;
+  --card: rgba(255, 255, 255, 0.9);
+  --border: rgba(15, 118, 110, 0.15);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-slate-950 text-slate-100 antialiased;
+  background: radial-gradient(circle at 20% 20%, rgba(14, 165, 164, 0.15), transparent 35%),
+    radial-gradient(circle at 80% 10%, rgba(249, 115, 22, 0.12), transparent 35%),
+    radial-gradient(circle at 60% 70%, rgba(14, 165, 164, 0.12), transparent 40%),
+    #0f172a;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial;
+}
+
+.container {
+  @apply max-w-6xl mx-auto px-6;
+}
+
+.card {
+  @apply rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur shadow-lg;
+}
+
+.pill {
+  @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold bg-white/10 border border-white/10 uppercase tracking-wide;
+}
+
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[var(--brand-500)] hover:bg-[var(--brand-600)] text-white font-semibold shadow-glow transition;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-white/10 text-white hover:border-white/30 transition;
+}
+
+.section-title {
+  @apply text-3xl md:text-4xl font-bold tracking-tight text-white;
+}
+
+.muted {
+  @apply text-slate-300;
 }
