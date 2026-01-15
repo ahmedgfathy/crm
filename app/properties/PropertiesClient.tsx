@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useI18n, LocaleText } from "../../components/I18nProvider";
 
 type Property = {
   id: string;
@@ -46,6 +47,7 @@ export default function PropertiesClient({
     ok: false,
   });
   const formRef = useRef<HTMLFormElement>(null);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (state.ok) {
@@ -83,7 +85,7 @@ export default function PropertiesClient({
             type="text"
             name="search"
             defaultValue={filters.search}
-            placeholder="Search by title, description, region"
+            placeholder={t("properties.search.placeholder", "Search by title, description, region")}
             className="rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-white w-64"
           />
           <select
@@ -91,35 +93,35 @@ export default function PropertiesClient({
             defaultValue={filters.type ?? ""}
             className="rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-white"
           >
-            <option value="">All types</option>
-            <option value="APARTMENT">Apartment</option>
-            <option value="VILLA">Villa</option>
-            <option value="TOWNHOUSE">Townhouse</option>
-            <option value="OFFICE">Office</option>
-            <option value="RETAIL">Retail</option>
-            <option value="LAND">Land</option>
-            <option value="WAREHOUSE">Warehouse</option>
+            <option value="">{t("properties.filter.type.all", "All types")}</option>
+            <option value="APARTMENT">{t("properties.type.apartment", "Apartment")}</option>
+            <option value="VILLA">{t("properties.type.villa", "Villa")}</option>
+            <option value="TOWNHOUSE">{t("properties.type.townhouse", "Townhouse")}</option>
+            <option value="OFFICE">{t("properties.type.office", "Office")}</option>
+            <option value="RETAIL">{t("properties.type.retail", "Retail")}</option>
+            <option value="LAND">{t("properties.type.land", "Land")}</option>
+            <option value="WAREHOUSE">{t("properties.type.warehouse", "Warehouse")}</option>
           </select>
           <select
             name="status"
             defaultValue={filters.status ?? ""}
             className="rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-sm text-white"
           >
-            <option value="">All status</option>
-            <option value="AVAILABLE">Available</option>
-            <option value="UNDER_CONTRACT">Under Contract</option>
-            <option value="SOLD">Sold</option>
-            <option value="RENTED">Rented</option>
+            <option value="">{t("properties.filter.status.all", "All status")}</option>
+            <option value="AVAILABLE">{t("properties.status.available", "Available")}</option>
+            <option value="UNDER_CONTRACT">{t("properties.status.underContract", "Under Contract")}</option>
+            <option value="SOLD">{t("properties.status.sold", "Sold")}</option>
+            <option value="RENTED">{t("properties.status.rented", "Rented")}</option>
           </select>
-          <button type="submit" className="btn-ghost text-sm">Filter</button>
+          <button type="submit" className="btn-ghost text-sm"><LocaleText id="properties.filter">Filter</LocaleText></button>
         </form>
 
-        <button onClick={handleToggle} className="btn-primary text-sm">Add new</button>
+        <button onClick={handleToggle} className="btn-primary text-sm"><LocaleText id="properties.add">Add new</LocaleText></button>
       </div>
 
       {state.ok && (
         <div className="card border-green-500/30 bg-green-500/10 text-green-100 p-4 text-sm">
-          {state.message ?? "Property saved."}
+          {state.message ?? t("properties.save", "Property saved.")}
         </div>
       )}
       {state.error && (
@@ -130,7 +132,7 @@ export default function PropertiesClient({
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         {properties.length === 0 && (
-          <div className="card p-4 text-sm text-slate-300">No properties yet. Add your first one.</div>
+          <div className="card p-4 text-sm text-slate-300"><LocaleText id="properties.empty">No properties yet. Add your first one.</LocaleText></div>
         )}
         {properties.map((p) => (
           <div key={p.id} className="card p-5 flex flex-col gap-2 h-full">
@@ -139,10 +141,10 @@ export default function PropertiesClient({
               <span className="pill">{p.status}</span>
             </div>
             <div className="text-sm text-slate-300">
-              {p.type} · {p.city || "Region not set"}
+              {p.type} · {p.city || t("properties.region.notset", "Region not set")}
             </div>
             <div className="text-sm text-slate-200">
-              {p.price ? `${p.price} ${p.currency ?? "EGP"}` : "Price on request"}
+              {p.price ? `${p.price} ${p.currency ?? "EGP"}` : t("properties.price.request", "Price on request")}
             </div>
             <div className="text-xs text-slate-400">
               {p.bedrooms ?? "-"} bd · {p.bathrooms ?? "-"} ba · {p.area ?? "-"} {p.areaUnit ?? "sqm"}
@@ -159,8 +161,8 @@ export default function PropertiesClient({
         }`}
       >
         <div className="flex items-center justify-between px-5 h-14 border-b border-white/10">
-          <div className="text-white font-semibold">Add property</div>
-          <button onClick={handleToggle} className="text-slate-300 hover:text-white text-sm">Close</button>
+          <div className="text-white font-semibold"><LocaleText id="properties.drawer.title">Add property</LocaleText></div>
+          <button onClick={handleToggle} className="text-slate-300 hover:text-white text-sm"><LocaleText id="properties.drawer.close">Close</LocaleText></button>
         </div>
         <div className="p-5 overflow-y-auto h-[calc(100%-56px)]">
           <form
@@ -171,79 +173,79 @@ export default function PropertiesClient({
           >
             <input type="hidden" name="__action" value="create" />
             <div className="space-y-1">
-              <label className="text-sm text-slate-200" htmlFor="title">Title *</label>
+              <label className="text-sm text-slate-200" htmlFor="title"><LocaleText id="properties.field.title">Title *</LocaleText></label>
               <input id="title" name="title" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" required />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="type">Type *</label>
+                <label className="text-sm text-slate-200" htmlFor="type"><LocaleText id="properties.field.type">Type *</LocaleText></label>
                 <select id="type" name="type" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" required>
-                  <option value="APARTMENT">Apartment</option>
-                  <option value="VILLA">Villa</option>
-                  <option value="TOWNHOUSE">Townhouse</option>
-                  <option value="OFFICE">Office</option>
-                  <option value="RETAIL">Retail</option>
-                  <option value="LAND">Land</option>
-                  <option value="WAREHOUSE">Warehouse</option>
+                  <option value="APARTMENT">{t("properties.type.apartment", "Apartment")}</option>
+                  <option value="VILLA">{t("properties.type.villa", "Villa")}</option>
+                  <option value="TOWNHOUSE">{t("properties.type.townhouse", "Townhouse")}</option>
+                  <option value="OFFICE">{t("properties.type.office", "Office")}</option>
+                  <option value="RETAIL">{t("properties.type.retail", "Retail")}</option>
+                  <option value="LAND">{t("properties.type.land", "Land")}</option>
+                  <option value="WAREHOUSE">{t("properties.type.warehouse", "Warehouse")}</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="status">Status</label>
+                <label className="text-sm text-slate-200" htmlFor="status"><LocaleText id="properties.field.status">Status</LocaleText></label>
                 <select id="status" name="status" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white">
-                  <option value="AVAILABLE">Available</option>
-                  <option value="UNDER_CONTRACT">Under Contract</option>
-                  <option value="SOLD">Sold</option>
-                  <option value="RENTED">Rented</option>
+                  <option value="AVAILABLE">{t("properties.status.available", "Available")}</option>
+                  <option value="UNDER_CONTRACT">{t("properties.status.underContract", "Under Contract")}</option>
+                  <option value="SOLD">{t("properties.status.sold", "Sold")}</option>
+                  <option value="RENTED">{t("properties.status.rented", "Rented")}</option>
                 </select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="price">Price</label>
+                <label className="text-sm text-slate-200" htmlFor="price"><LocaleText id="properties.field.price">Price</LocaleText></label>
                 <input id="price" name="price" type="number" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="currency">Currency</label>
+                <label className="text-sm text-slate-200" htmlFor="currency"><LocaleText id="properties.field.currency">Currency</LocaleText></label>
                 <input id="currency" name="currency" defaultValue="EGP" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="bedrooms">Bedrooms</label>
+                <label className="text-sm text-slate-200" htmlFor="bedrooms"><LocaleText id="properties.field.bedrooms">Bedrooms</LocaleText></label>
                 <input id="bedrooms" name="bedrooms" type="number" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="bathrooms">Bathrooms</label>
+                <label className="text-sm text-slate-200" htmlFor="bathrooms"><LocaleText id="properties.field.bathrooms">Bathrooms</LocaleText></label>
                 <input id="bathrooms" name="bathrooms" type="number" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="area">Area</label>
+                <label className="text-sm text-slate-200" htmlFor="area"><LocaleText id="properties.field.area">Area</LocaleText></label>
                 <input id="area" name="area" type="number" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="areaUnit">Area unit</label>
+                <label className="text-sm text-slate-200" htmlFor="areaUnit"><LocaleText id="properties.field.areaUnit">Area unit</LocaleText></label>
                 <input id="areaUnit" name="areaUnit" defaultValue="sqm" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
               <div className="space-y-1">
-                <label className="text-sm text-slate-200" htmlFor="region">Region</label>
+                <label className="text-sm text-slate-200" htmlFor="region"><LocaleText id="properties.field.region">Region</LocaleText></label>
                 <input id="region" name="region" className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm text-slate-200" htmlFor="description">Description</label>
+              <label className="text-sm text-slate-200" htmlFor="description"><LocaleText id="properties.field.description">Description</LocaleText></label>
               <textarea id="description" name="description" rows={3} className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-3 py-2 text-white" />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <button type="button" onClick={handleToggle} className="btn-ghost text-sm">Cancel</button>
-              <button type="submit" className="btn-primary text-sm">Save property</button>
+              <button type="button" onClick={handleToggle} className="btn-ghost text-sm"><LocaleText id="properties.cancel">Cancel</LocaleText></button>
+              <button type="submit" className="btn-primary text-sm"><LocaleText id="properties.save">Save property</LocaleText></button>
             </div>
           </form>
         </div>
@@ -252,11 +254,11 @@ export default function PropertiesClient({
       {confirmClose && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center px-6">
           <div className="card p-6 max-w-md w-full space-y-3">
-            <div className="text-lg font-semibold text-white">Discard changes?</div>
-            <p className="muted text-sm">You have unsaved data. Are you sure you want to close the drawer?</p>
+            <div className="text-lg font-semibold text-white"><LocaleText id="properties.discard.title">Discard changes?</LocaleText></div>
+            <p className="muted text-sm"><LocaleText id="properties.discard.body">You have unsaved data. Are you sure you want to close the drawer?</LocaleText></p>
             <div className="flex justify-end gap-2">
-              <button onClick={confirmCloseNo} className="btn-ghost text-sm">No</button>
-              <button onClick={confirmCloseYes} className="btn-primary text-sm">Yes</button>
+              <button onClick={confirmCloseNo} className="btn-ghost text-sm"><LocaleText id="properties.discard.no">No</LocaleText></button>
+              <button onClick={confirmCloseYes} className="btn-primary text-sm"><LocaleText id="properties.discard.yes">Yes</LocaleText></button>
             </div>
           </div>
         </div>

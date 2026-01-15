@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import { LocaleSwitcher } from "./I18nProvider";
 
 export default function Navbar() {
   return (
@@ -27,6 +28,7 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <LocaleSwitcher compact />
           <ThemeToggle />
           <a href="#contact" className="btn-primary text-sm">Book a demo</a>
         </div>

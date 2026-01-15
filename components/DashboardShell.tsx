@@ -3,22 +3,21 @@ import { ReactNode } from "react";
 import { getSession, logout } from "../lib/auth";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import { LocaleSwitcher, LocaleText } from "./I18nProvider";
 import SidebarToggle from "./SidebarToggle";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: "🏠" },
-  { label: "Profile", href: "/profile", icon: "👤" },
-  { label: "Properties", href: "/properties", icon: "🏢" },
-  { label: "Leads", href: "/leads", icon: "📞" },
-  { label: "Opportunity", href: "/opportunity", icon: "💼" },
-  { label: "Primary", href: "/primary", icon: "🚧" },
-  { label: "Document", href: "/document", icon: "📄" },
-  { label: "Reports", href: "/reports", icon: "📊" },
-  { label: "Management", href: "/management", icon: "⚙️" },
+  { id: "nav.dashboard", label: "Dashboard", href: "/dashboard", icon: "🏠" },
+  { id: "nav.profile", label: "Profile", href: "/profile", icon: "👤" },
+  { id: "nav.properties", label: "Properties", href: "/properties", icon: "🏢" },
+  { id: "nav.leads", label: "Leads", href: "/leads", icon: "📞" },
+  { id: "nav.opportunity", label: "Opportunity", href: "/opportunity", icon: "💼" },
+  { id: "nav.primary", label: "Primary", href: "/primary", icon: "🚧" },
+  { id: "nav.document", label: "Document", href: "/document", icon: "📄" },
+  { id: "nav.reports", label: "Reports", href: "/reports", icon: "📊" },
+  { id: "nav.management", label: "Management", href: "/management", icon: "⚙️" },
 ];
-
 const topActions = [
-  { label: "Translate", href: "#translate", icon: "🌐" },
   { label: "Notifications", href: "#notifications", icon: "🔔" },
   { label: "Mail", href: "#mail", icon: "✉️" },
   { label: "Calendar", href: "#calendar", icon: "📅" },
@@ -29,7 +28,7 @@ export default async function DashboardShell({ children }: { children: ReactNode
   const session = await getSession();
   const isSuperAdmin = session?.role === "owner";
   const items = isSuperAdmin
-    ? [...navItems, { label: "Administration", href: "/administration", icon: "🛡️" }]
+    ? [...navItems, { id: "nav.administration", label: "Administration", href: "/administration", icon: "🛡️" }]
     : navItems;
 
   return (
@@ -46,17 +45,20 @@ export default async function DashboardShell({ children }: { children: ReactNode
               className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 text-sm font-medium nav-item"
             >
               <span aria-hidden="true">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
+              <span className="nav-label"><LocaleText id={item.id} fallback={item.label}>{item.label}</LocaleText></span>
             </Link>
           ))}
         </nav>
+        <div className="px-3 py-3 border-t border-white/10 flex items-center justify-center">
+          <SidebarToggle />
+        </div>
       </aside>
 
       <div className="flex flex-col min-h-screen">
         <header className="h-14 border-b backdrop-blur flex items-center justify-between px-6">
           <div className="text-sm text-slate-300">Contaboo</div>
           <div className="flex items-center gap-2">
-            <SidebarToggle />
+            <LocaleSwitcher />
             <ThemeToggle />
             {topActions.map((action) =>
               action.href ? (
