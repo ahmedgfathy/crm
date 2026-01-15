@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ReactNode } from "react";
+import { logout } from "../lib/auth";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "🏠" },
+  { label: "Profile", href: "/profile", icon: "👤" },
   { label: "Properties", href: "/properties", icon: "🏢" },
   { label: "Leads", href: "/leads", icon: "📞" },
   { label: "Opportunity", href: "/opportunity", icon: "💼" },
@@ -17,6 +19,7 @@ const topActions = [
   { label: "Notifications", href: "#notifications", icon: "🔔" },
   { label: "Mail", href: "#mail", icon: "✉️" },
   { label: "Calendar", href: "#calendar", icon: "📅" },
+  { label: "Logout", icon: "⏻" },
 ];
 
 export default function DashboardShell({ children }: { children: ReactNode }) {
@@ -42,17 +45,30 @@ export default function DashboardShell({ children }: { children: ReactNode }) {
         <header className="h-14 border-b border-white/10 bg-slate-950/80 backdrop-blur flex items-center justify-between px-6">
           <div className="text-sm text-slate-300">Contaboo</div>
           <div className="flex items-center gap-2">
-            {topActions.map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                aria-label={action.label}
-                title={action.label}
-                className="px-3 py-2 text-lg rounded-lg hover:bg-white/5 border border-white/5"
-              >
-                <span aria-hidden="true">{action.icon}</span>
-              </Link>
-            ))}
+            {topActions.map((action) =>
+              action.href ? (
+                <Link
+                  key={action.label}
+                  href={action.href}
+                  aria-label={action.label}
+                  title={action.label}
+                  className="px-3 py-2 text-lg rounded-lg hover:bg-white/5 border border-white/5"
+                >
+                  <span aria-hidden="true">{action.icon}</span>
+                </Link>
+              ) : (
+                <form key={action.label} action={logout}>
+                  <button
+                    type="submit"
+                    aria-label={action.label}
+                    title={action.label}
+                    className="px-3 py-2 text-lg rounded-lg hover:bg-white/5 border border-white/5 text-red-200"
+                  >
+                    <span aria-hidden="true">{action.icon}</span>
+                  </button>
+                </form>
+              )
+            )}
             <div className="ml-2 h-9 w-9 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-sm font-semibold">
               SA
             </div>

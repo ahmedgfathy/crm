@@ -1,18 +1,10 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import DashboardShell from "../../components/DashboardShell";
-import { getSession, SESSION_COOKIE } from "../../lib/auth";
+import { getSession } from "../../lib/auth";
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) {
-    redirect("/login");
-  }
-
-  async function logoutAction() {
-    "use server";
-    const store = await cookies();
-    store.delete(SESSION_COOKIE);
     redirect("/login");
   }
 
@@ -50,10 +42,6 @@ export default async function DashboardPage() {
           <p className="muted mt-1 text-sm">Admin, roles, and settings.</p>
         </div>
       </div>
-
-      <form action={logoutAction} className="mt-8">
-        <button type="submit" className="btn-ghost">Logout</button>
-      </form>
     </DashboardShell>
   );
 }

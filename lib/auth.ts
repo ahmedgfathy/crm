@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 const OWNER_MOBILE = process.env.OWNER_MOBILE ?? "01002778090";
 const OWNER_PASSWORD = process.env.OWNER_PASSWORD ?? "ZeroCall20!@H";
@@ -26,4 +27,11 @@ export async function getSession(): Promise<Session | null> {
     return null;
   }
   return null;
+}
+
+export async function logout() {
+  "use server";
+  const store = await cookies();
+  store.delete(SESSION_COOKIE);
+  redirect("/login");
 }
