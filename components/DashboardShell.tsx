@@ -8,8 +8,8 @@ const navItems = [
   { label: "Opportunity", href: "/opportunity", icon: "💼" },
   { label: "Primary", href: "/primary", icon: "🚧" },
   { label: "Document", href: "/document", icon: "📄" },
-  { label: "Reports", href: "#reports", icon: "📊" },
-  { label: "Management", href: "#management", icon: "⚙️" },
+  { label: "Reports", href: "/reports", icon: "📊" },
+  { label: "Management", href: "/management", icon: "⚙️" },
 ];
 
 const topActions = [
