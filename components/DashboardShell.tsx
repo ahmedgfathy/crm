@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ReactNode } from "react";
-import { logout } from "../lib/auth";
+import { getSession, logout } from "../lib/auth";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "🏠" },
@@ -22,13 +22,19 @@ const topActions = [
   { label: "Logout", icon: "⏻" },
 ];
 
-export default function DashboardShell({ children }: { children: ReactNode }) {
+export default async function DashboardShell({ children }: { children: ReactNode }) {
+  const session = await getSession();
+  const isSuperAdmin = session?.mobile === "01002778090";
+  const items = isSuperAdmin
+    ? [...navItems, { label: "Administration", href: "/administration", icon: "🛡️" }]
+    : navItems;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 grid grid-cols-[240px_1fr]">
       <aside className="border-r border-white/10 bg-slate-950/90 backdrop-blur flex flex-col">
         <div className="h-14 px-6 flex items-center text-lg font-semibold">Contaboo CRM</div>
         <nav className="flex-1 px-3 py-2 space-y-1">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <Link
               key={item.label}
               href={item.href}

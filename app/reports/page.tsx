@@ -36,7 +36,7 @@ function tally(values: (string | null | undefined)[], fallback: string): { label
 }
 
 function sum(values: (number | null | undefined)[]) {
-  return values.reduce((acc, value) => acc + (value || 0), 0);
+  return values.reduce<number>((acc, value) => acc + (value ?? 0), 0);
 }
 
 export default async function ReportsPage() {

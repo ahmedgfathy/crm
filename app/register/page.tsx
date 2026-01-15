@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import InternalHeader from "../../components/InternalHeader";
+import { createSignupRequest } from "../../lib/signupStore";
 
 async function registerAction(formData: FormData) {
   "use server";
   const mobile = (formData.get("mobile") as string)?.trim();
   const email = (formData.get("email") as string)?.trim();
+  const company = (formData.get("company") as string)?.trim();
+  const password = (formData.get("password") as string)?.trim();
   if (!mobile) {
     redirect("/register?error=missing");
   }
-  // Placeholder: would create user + subscription intent, then route to subscription flow.
-  redirect(`/subscription?mobile=${encodeURIComponent(mobile)}${email ? `&email=${encodeURIComponent(email)}` : ""}`);
+  const request = await createSignupRequest({ mobile, email: email || null, company: company || "Unnamed Company", password: password || null });
+  redirect(`/subscription?request=${request.id}`);
 }
 
 export default function RegisterPage({
@@ -62,6 +65,33 @@ export default function RegisterPage({
                 placeholder="ops@yourcompany.com"
                 className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-slate-200" htmlFor="company">
+                Company name
+              </label>
+              <input
+                id="company"
+                name="company"
+                required
+                placeholder="Contaboo Real Estate"
+                className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-slate-200" htmlFor="password">
+                Desired password (saved for approval)
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Set a password for later"
+                className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <p className="text-xs text-slate-400">We store it for the admin to provision; final auth can be set post-approval.</p>
             </div>
 
             <button type="submit" className="btn-primary w-full justify-center">
