@@ -9,6 +9,8 @@ import SidebarToggle from "./SidebarToggle";
 const navItems = [
   { id: "nav.dashboard", label: "Dashboard", href: "/dashboard", icon: "🏠" },
   { id: "nav.profile", label: "Profile", href: "/profile", icon: "👤" },
+  { id: "nav.organization", label: "Organization", href: "/organization", icon: "🏢" },
+  { id: "nav.contacts", label: "Contacts", href: "/contacts", icon: "📇" },
   { id: "nav.properties", label: "Properties", href: "/properties", icon: "🏢" },
   { id: "nav.leads", label: "Leads", href: "/leads", icon: "📞" },
   { id: "nav.opportunity", label: "Opportunity", href: "/opportunity", icon: "💼" },

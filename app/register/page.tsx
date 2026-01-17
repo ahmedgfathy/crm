@@ -1,145 +1,28 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import InternalHeader from "../../components/InternalHeader";
-import { createSignupRequest } from "../../lib/signupStore";
-import { listActiveSubscriptionPlans } from "../../lib/subscriptionPlans";
 
-async function registerAction(formData: FormData) {
-  "use server";
-  const mobile = (formData.get("mobile") as string)?.trim();
-  const email = (formData.get("email") as string)?.trim();
-  const company = (formData.get("company") as string)?.trim();
-  const password = (formData.get("password") as string)?.trim();
-   const planId = (formData.get("planId") as string)?.trim();
-  if (!mobile || !password) {
-    redirect("/register?error=missing");
-  }
-  const request = await createSignupRequest({
-    mobile,
-    email: email || null,
-    company: company || "Unnamed Company",
-    password,
-    subscriptionPlanId: planId || null,
-  });
-  redirect(`/subscription?request=${request.id}`);
-}
-
-export default async function RegisterPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const params = await searchParams;
-  const error = params?.error === "missing" ? "Mobile is required." : null;
-  const plans = await listActiveSubscriptionPlans();
-  const hasPlans = plans.length > 0;
-
+export default function RegisterPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-950">
       <InternalHeader />
       <main className="flex-1 py-16 px-6">
         <div className="max-w-lg mx-auto card p-8 space-y-6">
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold text-white">Create account</h1>
-            <p className="muted">Start your subscription setup for your team.</p>
+            <h1 className="text-3xl font-bold text-white">Registration is managed by IT</h1>
+            <p className="muted">Self-service signups are disabled. Ask your owner/IT admin to create your account in Administration → User directory.</p>
           </div>
 
-          {error && (
-            <div className="rounded-lg border border-red-500/40 bg-red-500/10 text-red-100 px-4 py-3 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form action={registerAction} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm text-slate-200" htmlFor="mobile">
-                Mobile number
-              </label>
-              <input
-                id="mobile"
-                name="mobile"
-                type="tel"
-                required
-                placeholder="0100 277 8090"
-                className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-slate-200" htmlFor="email">
-                Work email (optional)
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="ops@yourcompany.com"
-                className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-slate-200" htmlFor="company">
-                Company name
-              </label>
-              <input
-                id="company"
-                name="company"
-                required
-                placeholder="Contaboo Real Estate"
-                className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-slate-200" htmlFor="password">
-                Desired password (saved for approval)
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Set a password for later"
-                className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-              <p className="text-xs text-slate-400">We store it for the admin to provision; final auth can be set post-approval.</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-slate-200" htmlFor="planId">
-                Choose a subscription plan
-              </label>
-              {hasPlans ? (
-                <select
-                  id="planId"
-                  name="planId"
-                  required
-                  className="w-full rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  defaultValue={plans[0]?.id}
-                >
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name} — {plan.currency}{plan.priceAmount ? ` ${plan.priceAmount}` : ""} / {plan.billingCycle}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 text-amber-100 px-4 py-3 text-sm">
-                  No active plans yet. Please contact support.
-                </div>
-              )}
-              {hasPlans && (
-                <p className="text-xs text-slate-400">Limits vary by plan (users, storage, bandwidth, properties, leads).</p>
-              )}
-            </div>
-
-            <button type="submit" className="btn-primary w-full justify-center" disabled={!hasPlans}>
-              Continue to subscription
-            </button>
-          </form>
+          <div className="rounded-lg border border-white/10 bg-slate-900/80 p-4 text-sm text-slate-200 space-y-2">
+            <p className="text-white font-semibold">What to do next</p>
+            <ul className="list-disc list-inside text-slate-300 space-y-1">
+              <li>Share your name, work email, mobile, and role with your admin.</li>
+              <li>They will provision you directly and send a temporary password.</li>
+              <li>Use the login page to sign in once provisioned.</li>
+            </ul>
+          </div>
 
           <div className="text-center text-sm text-slate-300">
-            Already have access? <Link className="hover:text-white" href="/login">Sign in</Link>
+            Ready to sign in? <Link className="hover:text-white" href="/login">Go to login</Link>
           </div>
         </div>
       </main>

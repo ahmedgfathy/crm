@@ -10,10 +10,24 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  mobile    String?  @unique
   name      String?
+  password  String?
+  role      String   @default("member")
+  status    String   @default("ACTIVE")
+  timezone  String   @default("UTC")
   company   Company? @relation(fields: [companyId], references: [id])
   companyId String?
+  team      Team?    @relation(fields: [teamId], references: [id])
+  teamId    String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles         UserRole[]
+  ownedProperties   Property[]        @relation("PropertyOwner")
+  ownedLeads        Lead[]            @relation("LeadOwner")
+  ownedOpportunities Opportunity[]    @relation("OpportunityOwner")
+  auditLogs         AuditLog[]
 }
 
 model Company {
@@ -21,21 +35,38 @@ model Company {
   name        String
   domain      String?
   users       User[]
+  teams       Team[]
   properties  Property[]
   leads       Lead[]
   folders     Folder[]
   documents   DocumentFile[]
   shareLinks  ShareLink[]
   opportunities Opportunity[]
-  subscription Subscription?
   createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   String
+  parentTeam  Team?    @relation("TeamHierarchy", fields: [parentId], references: [id])
+  parentId    String?
+  subTeams    Team[]   @relation("TeamHierarchy")
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
 }
 
 model Property {
   id          String          @id @default(cuid())
   title       String
-  type        String
-  status      String          @default("AVAILABLE")
+  typeKey     String
+  statusKey   String          @default("available")
   price       Int?
   currency    String?         @default("EGP")
   addressLine String?
@@ -48,16 +79,24 @@ model Property {
   description String?
   company     Company         @relation(fields: [companyId], references: [id])
   companyId   String
+  owner       User?           @relation("PropertyOwner", fields: [ownerId], references: [id])
+  ownerId     String?
+  isPublic    Boolean         @default(false)
   listedAt    DateTime        @default(now())
   createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([statusKey])
 }
 
 model Lead {
   id            String   @id @default(cuid())
   title         String
-  status        String   @default("NEW")
-  source        String?
-  stage         String?  @default("Prospect")
+  statusKey     String   @default("new")
+  sourceKey     String?
+  stageKey      String?  @default("prospect")
   budget        Int?
   currency      String?  @default("EGP")
   region        String?
@@ -67,23 +106,38 @@ model Lead {
   notes         String?
   company       Company  @relation(fields: [companyId], references: [id])
   companyId     String
+  owner         User?    @relation("LeadOwner", fields: [ownerId], references: [id])
+  ownerId       String?
+  isPublic      Boolean  @default(false)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([statusKey])
 }
 
 model Opportunity {
   id          String   @id @default(cuid())
   title       String
-  stage       String   @default("Qualified")
-  status      String   @default("OPEN")
+  stageKey    String   @default("qualified")
+  statusKey   String   @default("open")
   value       Int?
   currency    String?  @default("EGP")
   probability Float?   @default(0)
   closeDate   DateTime?
-  owner       String?
+  owner       User?    @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  ownerId     String?
   notes       String?
+  isPublic    Boolean  @default(false)
   company     Company  @relation(fields: [companyId], references: [id])
   companyId   String
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([statusKey])
 }
 
 model Developer {
@@ -100,7 +154,7 @@ model PrimaryProject {
   id          String         @id @default(cuid())
   name        String
   region      String?
-  status      String?        @default("Planned")
+  statusKey   String?        @default("planned")
   description String?
   developer   Developer      @relation(fields: [developerId], references: [id])
   developerId String
@@ -111,8 +165,8 @@ model PrimaryProject {
 model PrimaryUnit {
   id         String          @id @default(cuid())
   title      String
-  type       String
-  status     String?         @default("AVAILABLE")
+  typeKey    String
+  statusKey  String?         @default("available")
   price      Int?
   currency   String?         @default("EGP")
   bedrooms   Int?
@@ -126,33 +180,20 @@ model PrimaryUnit {
   createdAt  DateTime        @default(now())
 }
 
-model Subscription {
-  id         String   @id @default(cuid())
-  company    Company  @relation(fields: [companyId], references: [id])
-  companyId  String   @unique
-  plan       String
-  priceEGP   Int
-  startedAt  DateTime @default(now())
-}
+model DataOption {
+  id        String   @id @default(cuid())
+  category  String
+  key       String
+  labelEn   String
+  labelAr   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-model SubscriptionPlan {
-  id           String   @id @default(cuid())
-  name         String
-  category     String?
-  description  String?
-  priceAmount  Int?
-  currency     String   @default("EGP")
-  billingCycle String   @default("monthly")
-  usersLimit   Int?
-  storageGB    Int?
-  bandwidthGB  Int?
-  propertiesLimit Int?
-  leadsLimit   Int?
-  estatesLimit Int?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  signupRequests SignupRequest[]
+  @@unique([category, key])
+  @@index([category])
+  @@index([isActive])
 }
 
 model Folder {
@@ -192,16 +233,135 @@ model ShareLink {
   createdAt   DateTime      @default(now())
 }
 
-model SignupRequest {
+
+model PermissionClass {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  isSystem    Boolean           @default(false)
+  isActive    Boolean           @default(true)
+  rules       PermissionRule[]
+  roles       Role[]
+  templates   PermissionTemplate[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model PermissionRule {
+  id                String   @id @default(cuid())
+  module            String
+  resource          String?
+  canRead           Boolean  @default(true)
+  canCreate         Boolean  @default(false)
+  canUpdate         Boolean  @default(false)
+  canDelete         Boolean  @default(false)
+  scope             String   @default("all")
+  condition         String?
+  permissionClass   PermissionClass @relation(fields: [permissionClassId], references: [id], onDelete: Cascade)
+  permissionClassId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([permissionClassId])
+  @@index([module])
+}
+
+model Role {
+  id                String           @id @default(cuid())
+  name              String           @unique
+  description       String?
+  isSystem          Boolean          @default(false)
+  isActive          Boolean          @default(true)
+  permissionClass   PermissionClass? @relation(fields: [permissionClassId], references: [id])
+  permissionClassId String?
+  parentRole        Role?            @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
+  parentRoleId      String?
+  childRoles        Role[]           @relation("RoleHierarchy")
+  userRoles         UserRole[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([permissionClassId])
+}
+
+model UserRole {
   id        String   @id @default(cuid())
-  mobile    String
-  email     String?
-  company   String
-  password  String?
-  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
-  subscriptionPlanId String?
-  status    String   @default("PENDING")
-  note      String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId    String
+  grantedBy String?
+  expiresAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model PermissionTemplate {
+  id                String          @id @default(cuid())
+  name              String          @unique
+  description       String?
+  category          String
+  permissionClass   PermissionClass @relation(fields: [permissionClassId], references: [id], onDelete: Cascade)
+  permissionClassId String
+  isActive          Boolean         @default(true)
+  sortOrder         Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([category])
+  @@index([permissionClassId])
+}
+
+model DataPolicy {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  module      String
+  resource    String?
+  scope       String
+  condition   String
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([module])
+  @@index([isActive])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  module      String
+  resource    String?
+  resourceId  String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  metadata    String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([module])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Translation {
+  id        String   @id @default(cuid())
+  key       String
+  locale    String
+  value     String
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+  @@index([locale])
+  @@index([category])
 }

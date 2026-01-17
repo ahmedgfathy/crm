@@ -94,16 +94,19 @@ export default async function OpportunityPage({
 
   return (
     <DashboardShell>
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="pill text-xs">Opportunity</p>
-        <p className="muted text-sm">Pipeline-ready deals with stage, value, probability, and owners.</p>
-      </div>
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <p className="pill">Opportunity</p>
+          <h1 className="text-3xl font-bold text-white">Opportunities</h1>
+          <p className="muted text-sm">Single-company pipeline: stage, value, probability, owners, and close dates.</p>
+        </div>
 
-      <OpportunityClient
-        opportunities={clientOps}
-        filters={{ search, stage: filterStage, status: filterStatus }}
-        action={createOpportunity}
-      />
+        <OpportunityClient
+          opportunities={clientOps}
+          filters={{ search, stage: filterStage, status: filterStatus }}
+          action={createOpportunity}
+        />
+      </div>
     </DashboardShell>
   );
 }

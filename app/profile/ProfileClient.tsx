@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useEffect } from "react";
+import { useFormState, useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { useI18n, LocaleText } from "../../components/I18nProvider";
 
 export type ProfileData = {
@@ -11,14 +13,28 @@ export type ProfileData = {
   timezone: string;
 };
 
-export default function ProfileClient({ data }: { data: ProfileData }) {
-  const [message, setMessage] = useState<string | null>(null);
-  const { t } = useI18n();
+export type ProfileFormState = { ok: boolean; message: string | null };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMessage("Saved locally. Wire to backend when ready.");
-  };
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  const { t } = useI18n();
+  return (
+    <button type="submit" className="btn-primary text-sm" disabled={pending}>
+      {pending ? t("profile.saving", "Saving...") : t("profile.save", "Save changes")}
+    </button>
+  );
+}
+
+export default function ProfileClient({ data, saveProfileAction }: { data: ProfileData; saveProfileAction: (state: ProfileFormState, formData: FormData) => Promise<ProfileFormState> }) {
+  const [state, formAction] = useFormState<ProfileFormState, FormData>(saveProfileAction, { ok: false, message: null });
+  const { t } = useI18n();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state.ok) {
+      router.refresh();
+    }
+  }, [state.ok, router]);
 
   return (
     <div className="space-y-6">
@@ -40,14 +56,14 @@ export default function ProfileClient({ data }: { data: ProfileData }) {
         </div>
       </div>
 
-      {message && (
-        <div className="card border-green-500/30 bg-green-500/10 text-green-100 p-4 text-sm">
-          {message}
+      {state.message && (
+        <div className={`card p-4 text-sm ${state.ok ? "border-green-500/30 bg-green-500/10 text-green-100" : "border-red-500/30 bg-red-500/10 text-red-100"}`}>
+          {state.message}
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <form onSubmit={handleSubmit} className="card p-5 space-y-4">
+        <form action={formAction} className="card p-5 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-white font-semibold"><LocaleText id="profile.profile">Profile</LocaleText></p>
             <p className="muted text-xs"><LocaleText id="profile.profile.helper">Personal details</LocaleText></p>
@@ -71,7 +87,7 @@ export default function ProfileClient({ data }: { data: ProfileData }) {
             </label>
           </div>
           <div className="flex items-center justify-end gap-2">
-            <button type="submit" className="btn-primary text-sm"><LocaleText id="profile.save">Save changes</LocaleText></button>
+            <SubmitButton />
           </div>
         </form>
 

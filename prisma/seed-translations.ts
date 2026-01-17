@@ -1,21 +1,8 @@
-"use client";
+import { PrismaClient } from "@prisma/client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+const prisma = new PrismaClient();
 
-type Locale = "en" | "ar";
-
-type Dictionary = Record<string, string>;
-
-type I18nContextValue = {
-  locale: Locale;
-  t: (key: string, fallback?: string) => string;
-  setLocale: (locale: Locale) => void;
-};
-
-const STORAGE_KEY = "ctb_locale";
-
-// Fallback translations in case database is not available
-const fallbackTranslations: Record<Locale, Dictionary> = {
+const translations = {
   en: {
     "nav.dashboard": "Dashboard",
     "nav.profile": "Profile",
@@ -74,7 +61,6 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
     "reports.helper.share": "Share",
     "reports.helper.lastMonths": "Last months",
     "reports.helper.noData": "No data yet.",
-
     "login.title": "Sign in",
     "login.subtitle": "Use your mobile number to access the dashboard.",
     "login.mobile": "Mobile number",
@@ -85,7 +71,6 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
     "login.forgot": "Forgot password?",
     "login.error.missing": "Please enter mobile and password.",
     "login.error.invalid": "Invalid credentials.",
-
     "profile.name": "Name",
     "profile.contact": "Contact",
     "profile.timezone": "Timezone",
@@ -110,7 +95,6 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
     "profile.notifications.document": "Document share",
     "profile.notifications.pipeline": "Pipeline change",
     "profile.notifications.billing": "Billing alerts",
-
     "properties.search.placeholder": "Search by title, description, region",
     "properties.filter.type.all": "All types",
     "properties.filter.status.all": "All status",
@@ -208,7 +192,6 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
     "reports.helper.share": "النسبة",
     "reports.helper.lastMonths": "آخر الشهور",
     "reports.helper.noData": "لا توجد بيانات بعد",
-
     "login.title": "تسجيل الدخول",
     "login.subtitle": "استخدم رقم الموبايل للوصول إلى لوحة التحكم.",
     "login.mobile": "رقم الموبايل",
@@ -219,7 +202,6 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
     "login.forgot": "نسيت كلمة المرور؟",
     "login.error.missing": "من فضلك أدخل الموبايل وكلمة المرور.",
     "login.error.invalid": "بيانات الدخول غير صحيحة.",
-
     "profile.name": "الاسم",
     "profile.contact": "التواصل",
     "profile.timezone": "المنطقة الزمنية",
@@ -244,7 +226,6 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
     "profile.notifications.document": "مشاركة الوثائق",
     "profile.notifications.pipeline": "تغيير المسار",
     "profile.notifications.billing": "تنبيهات الفوترة",
-
     "properties.search.placeholder": "ابحث بالعنوان أو الوصف أو المنطقة",
     "properties.filter.type.all": "كل الأنواع",
     "properties.filter.status.all": "كل الحالات",
@@ -286,97 +267,53 @@ const fallbackTranslations: Record<Locale, Dictionary> = {
   },
 };
 
-const I18nContext = createContext<I18nContextValue>({
-  locale: "en",
-  t: (key, fallback) => fallback ?? key,
-  setLocale: () => undefined,
-});
-
-function applyLocale(locale: Locale) {
-  if (typeof document === "undefined") return;
-  const dir = locale === "ar" ? "rtl" : "ltr";
-  document.documentElement.lang = locale;
-  document.documentElement.dir = dir;
-  document.documentElement.dataset.locale = locale;
-  document.body.dir = dir;
+function getCategory(key: string): string {
+  const prefix = key.split(".")[0];
+  const categoryMap: Record<string, string> = {
+    nav: "Navigation",
+    action: "Actions",
+    dashboard: "Dashboard",
+    reports: "Reports",
+    login: "Login",
+    profile: "Profile",
+    properties: "Properties",
+  };
+  return categoryMap[prefix] || "General";
 }
 
-export function I18nProvider({ 
-  children, 
-  initialTranslations 
-}: { 
-  children: React.ReactNode;
-  initialTranslations?: Record<Locale, Dictionary>;
-}) {
-  const [locale, setLocale] = useState<Locale>("en");
-  const [translations, setTranslations] = useState<Record<Locale, Dictionary>>(
-    initialTranslations || fallbackTranslations
-  );
+async function main() {
+  console.log("Starting translation seed...");
 
-  useEffect(() => {
-    const stored = (typeof window !== "undefined" && window.localStorage.getItem(STORAGE_KEY)) as Locale | null;
-    const next = stored === "ar" ? "ar" : "en";
-    setLocale(next);
-    applyLocale(next);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, locale);
+  const data = [];
+  for (const [locale, dict] of Object.entries(translations)) {
+    for (const [key, value] of Object.entries(dict)) {
+      data.push({
+        key,
+        locale,
+        value,
+        category: getCategory(key),
+      });
     }
-    applyLocale(locale);
-  }, [locale]);
+  }
 
-  const value = useMemo<I18nContextValue>(
-    () => ({
-      locale,
-      t: (key: string, fallback?: string) => translations[locale][key] ?? fallback ?? key,
-      setLocale,
-    }),
-    [locale]
-  );
+  console.log(`Seeding ${data.length} translations...`);
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  for (const item of data) {
+    await prisma.translation.upsert({
+      where: { key_locale: { key: item.key, locale: item.locale } },
+      update: { value: item.value, category: item.category },
+      create: item,
+    });
+  }
+
+  console.log("Translation seed complete!");
 }
 
-export function useI18n() {
-  return useContext(I18nContext);
-}
-
-export function LocaleText({
-  id,
-  fallback,
-  values,
-  children,
-}: {
-  id: string;
-  fallback?: string;
-  values?: Record<string, string | number>;
-  children?: React.ReactNode;
-}) {
-  const { t } = useI18n();
-  const fallbackText = typeof children === "string" ? children : fallback;
-  const text = t(id, fallbackText);
-  if (!values) return <>{text}</>;
-  const replaced = Object.entries(values).reduce((acc, [key, val]) => acc.replaceAll(`{${key}}`, String(val)), text);
-  return <>{replaced}</>;
-}
-
-export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
-  const { locale, setLocale, t } = useI18n();
-  const toggle = () => setLocale(locale === "en" ? "ar" : "en");
-  const label = t("action.translate", locale === "en" ? "Translate" : "ترجمة");
-  const icon = locale === "en" ? "🌐" : "🇸🇦";
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={label}
-      title={label}
-      className={`px-3 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-white text-sm ${compact ? "" : "min-w-[48px]"}`}
-    >
-      <span aria-hidden="true">{icon}</span>
-    </button>
-  );
-}
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

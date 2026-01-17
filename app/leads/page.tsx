@@ -91,16 +91,19 @@ export default async function LeadsPage({
 
   return (
     <DashboardShell>
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="pill text-xs">Leads</p>
-        <p className="muted text-sm">Source, status, budget, region, contacts at a glance.</p>
-      </div>
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <p className="pill">Leads</p>
+          <h1 className="text-3xl font-bold text-white">Leads</h1>
+          <p className="muted text-sm">Single-company funnel: source, status, budget, region, and contacts in one sweep.</p>
+        </div>
 
-      <LeadsClient
-        leads={leads}
-        filters={{ search, status: filterStatus, source: filterSource }}
-        action={createLead}
-      />
+        <LeadsClient
+          leads={leads}
+          filters={{ search, status: filterStatus, source: filterSource }}
+          action={createLead}
+        />
+      </div>
     </DashboardShell>
   );
 }

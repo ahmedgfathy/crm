@@ -55,9 +55,9 @@ export function LoginClient({ loginAction, errorKey }: { loginAction: (formData:
         </form>
 
         <div className="flex items-center justify-between text-sm text-slate-300">
-          <a href="/register" className="hover:text-white">
-            <LocaleText id="login.register">Register</LocaleText>
-          </a>
+          <span className="text-slate-400">
+            <LocaleText id="login.register.disabled">Registration is managed by your admin.</LocaleText>
+          </span>
           <a href="/reset" className="hover:text-white">
             <LocaleText id="login.forgot">Forgot password?</LocaleText>
           </a>

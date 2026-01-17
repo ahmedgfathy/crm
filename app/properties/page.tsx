@@ -96,16 +96,19 @@ export default async function PropertiesPage({
 
   return (
     <DashboardShell>
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="pill text-xs">Properties</p>
-        <p className="muted text-sm">Type, status, pricing, region in one view.</p>
-      </div>
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <p className="pill">Properties</p>
+          <h1 className="text-3xl font-bold text-white">Properties</h1>
+          <p className="muted text-sm">Single-company inventory: type, status, pricing, and regions in one view.</p>
+        </div>
 
-      <PropertiesClient
-        properties={properties}
-        filters={{ search, type: filterType, status: filterStatus }}
-        action={createProperty}
-      />
+        <PropertiesClient
+          properties={properties}
+          filters={{ search, type: filterType, status: filterStatus }}
+          action={createProperty}
+        />
+      </div>
     </DashboardShell>
   );
 }
