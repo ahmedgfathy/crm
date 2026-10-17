@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { parseContactsFile } from "./contactsImport.js";
+import { MAX_IMPORT_CONTACTS, parseContactsFile } from "./contactsImport.js";
 import "./style.css";
 
 const emptyContact = { name: "", company: "", email: "", phone: "", status: "Lead", notes: "" };
@@ -194,11 +194,12 @@ function ImportDialog({ onClose, onImport }) {
 
   async function readFile(event) {
     const file = event.target.files?.[0];
+    event.target.value = "";
     setPreview(null);
     setError("");
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Choose a file smaller than 5 MB.");
+    if (file.size > 50 * 1024 * 1024) {
+      setError("Choose a file smaller than 50 MB.");
       return;
     }
     try {
@@ -232,10 +233,10 @@ function ImportDialog({ onClose, onImport }) {
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Close dialog">×</button>
         </div>
-        <p className="import-intro">Choose a Google Contacts or Outlook CSV export, or any standard vCard (.vcf) file. Names, companies, email addresses, phone numbers, and notes are mapped automatically.</p>
+        <p className="import-intro">Choose a Google Contacts or Outlook CSV export, or any standard vCard (.vcf) file. Names, companies, email addresses, phone numbers, and notes are mapped automatically. Invalid email values are left blank so they do not block the import.</p>
         <label className="file-picker">
           <span className="file-picker-icon">↥</span>
-          <span><strong>{preview ? preview.fileName : "Choose a contacts file"}</strong><small>CSV or VCF · up to 5 MB · 1,000 contacts</small></span>
+          <span><strong>{preview ? preview.fileName : "Choose a contacts file"}</strong><small>CSV or VCF · up to 50 MB · {MAX_IMPORT_CONTACTS.toLocaleString()} contacts per file</small></span>
           <input type="file" accept=".csv,.vcf,text/csv,text/vcard" onChange={readFile} />
         </label>
         {preview && (
@@ -250,6 +251,7 @@ function ImportDialog({ onClose, onImport }) {
               </table>
             </div>
             {preview.contacts.length > 5 && <span className="preview-more">Showing 5 of {preview.contacts.length} contacts</span>}
+            {preview.invalidEmails > 0 && <span className="duplicate-note">{preview.invalidEmails} contact{preview.invalidEmails === 1 ? " has" : "s have"} an invalid email value; that field will be left blank.</span>}
             <span className="duplicate-note">Contacts with email addresses already in your list will be skipped.</span>
           </div>
         )}

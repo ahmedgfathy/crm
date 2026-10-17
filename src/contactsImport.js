@@ -1,7 +1,16 @@
-const MAX_CONTACTS = 1000;
+export const MAX_IMPORT_CONTACTS = 50000;
 
 function normalizeHeader(value) {
   return value.toLowerCase().replace(/^\uFEFF/, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isEmailHeader(header) {
+  return /^(?:e mail|email)(?: \d+)? (?:value|address)$/.test(header)
+    || ["email", "e mail", "email address", "e mail address"].includes(header);
 }
 
 function parseCsvRows(text) {
@@ -76,9 +85,9 @@ function csvContact(values, headers) {
   const lastName = get("family name", "last name", "surname");
   const name = get("name", "full name", "display name", "formatted name")
     || [firstName, middleName, lastName].filter(Boolean).join(" ");
-  const email = firstMatchingValue(values, headers, (header) =>
-    /^(?:e mail|email)(?: \d+)? (?:value|address)$/.test(header)
-    || ["email", "e mail", "email address", "e mail address"].includes(header));
+  const emailValues = values.filter((_value, index) => isEmailHeader(headers[index]))
+    .map((value) => value.trim()).filter(Boolean);
+  const email = emailValues.find(isValidEmail) || "";
   const phone = firstMatchingValue(values, headers, (header) =>
     /(?:phone|telephone|mobile|fax|pager)/.test(header)
     && !/(?:type|label|country|extension)/.test(header));
@@ -87,6 +96,7 @@ function csvContact(values, headers) {
     name,
     company: get("organization name", "company", "company name", "organization", "organisation"),
     email,
+    invalidEmail: emailValues.length > 0 && !email,
     phone,
     status: "Lead",
     notes: get("notes", "note"),
@@ -103,19 +113,21 @@ function parseCsv(text) {
 
   const contacts = [];
   let skipped = 0;
+  let invalidEmails = 0;
   for (const values of rows.slice(1)) {
-    const contact = csvContact(values, headers);
+    const { invalidEmail, ...contact } = csvContact(values, headers);
     if (!contact.name) {
       skipped += 1;
       continue;
     }
+    if (invalidEmail) invalidEmails += 1;
     contacts.push(contact);
-    if (contacts.length > MAX_CONTACTS) {
-      throw new Error(`Imports are limited to ${MAX_CONTACTS.toLocaleString()} contacts per file.`);
+    if (contacts.length > MAX_IMPORT_CONTACTS) {
+      throw new Error(`Imports are limited to ${MAX_IMPORT_CONTACTS.toLocaleString()} contacts per file.`);
     }
   }
   if (!contacts.length) throw new Error("No contacts with names were found in this CSV file.");
-  return { contacts, skipped };
+  return { contacts, skipped, invalidEmails };
 }
 
 function splitVCardValue(value, delimiter = ";") {
@@ -165,19 +177,33 @@ function parseVCard(text) {
       structuredName[3],
     ].map((part) => splitVCardValue(part, ",").join(",").replace(/\\([,;\\])/g, "$1"))
       .filter(Boolean).join(" ");
-    const email = (properties.get("EMAIL") || []).map((item) => item.trim()).find(Boolean) || "";
+    const emailValues = (properties.get("EMAIL") || []).map((item) => item.trim()).filter(Boolean);
+    const email = emailValues.find(isValidEmail) || "";
     const phone = (properties.get("TEL") || []).map((item) => item.trim()).find(Boolean) || "";
     const organization = value("ORG");
     const company = splitVCardValue(organization)[0] || "";
     const note = value("NOTE").replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1");
-    return { name, company, email, phone, status: "Lead", notes: note };
+    return {
+      name,
+      company,
+      email,
+      invalidEmail: emailValues.length > 0 && !email,
+      phone,
+      status: "Lead",
+      notes: note,
+    };
   }).filter((contact) => contact.name.trim());
 
   if (!contacts.length) throw new Error("No vCards with a contact name were found in this file.");
-  if (contacts.length > MAX_CONTACTS) {
-    throw new Error(`Imports are limited to ${MAX_CONTACTS.toLocaleString()} contacts per file.`);
+  if (contacts.length > MAX_IMPORT_CONTACTS) {
+    throw new Error(`Imports are limited to ${MAX_IMPORT_CONTACTS.toLocaleString()} contacts per file.`);
   }
-  return { contacts, skipped: cards.length - contacts.length };
+  const invalidEmails = contacts.filter((contact) => contact.invalidEmail).length;
+  return {
+    contacts: contacts.map(({ invalidEmail: _invalidEmail, ...contact }) => contact),
+    skipped: cards.length - contacts.length,
+    invalidEmails,
+  };
 }
 
 export function parseContactsFile(fileName, text) {

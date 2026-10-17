@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import express from "express";
+import { createServer as createHttpServer } from "node:http";
 import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -11,6 +12,8 @@ const port = Number(process.env.PORT || 3001);
 const localAccountEmail = "cernkey@outlook.com";
 const statuses = new Set(["Lead", "Active", "Inactive"]);
 const fields = ["name", "company", "email", "phone", "status", "notes"];
+const maxImportContacts = 50000;
+const importBatchSize = 1000;
 const passwordLength = 64;
 const sessionLifetimeSeconds = 60 * 60 * 24 * 7;
 const sessionSecret = randomBytes(32);
@@ -20,7 +23,7 @@ const scrypt = promisify(scryptCallback);
 const loginAttempts = new Map();
 
 app.disable("x-powered-by");
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json({ limit: "64mb" }));
 
 function getSession(request) {
   const cookie = request.headers.cookie?.split(";").map((part) => part.trim())
@@ -204,7 +207,7 @@ function validateContact(body) {
     contact[field] = (body[field] ?? "").trim();
   }
   if (!contact.name) return { error: "Name is required." };
-  const limits = { name: 200, company: 200, email: 254, phone: 80, status: 20, notes: 4000 };
+  const limits = { name: 200, company: 5000, email: 254, phone: 5000, status: 20, notes: 50000 };
   for (const [field, limit] of Object.entries(limits)) {
     if (contact[field].length > limit) return { error: `${field} must be ${limit} characters or fewer.` };
   }
@@ -223,8 +226,8 @@ app.post("/api/contacts/import", async (request, response, next) => {
   if (!Array.isArray(contacts) || !contacts.length) {
     return response.status(400).json({ error: "Choose a file with at least one named contact." });
   }
-  if (contacts.length > 1000) {
-    return response.status(400).json({ error: "Import up to 1,000 contacts at a time." });
+  if (contacts.length > maxImportContacts) {
+    return response.status(400).json({ error: `Import up to ${maxImportContacts.toLocaleString()} contacts at a time.` });
   }
 
   const validated = contacts.map(validateContact);
@@ -256,12 +259,22 @@ app.post("/api/contacts/import", async (request, response, next) => {
 
     const imported = await withTransaction(async (client) => {
       const rows = [];
-      for (const contact of toImport) {
+      for (let offset = 0; offset < toImport.length; offset += importBatchSize) {
+        const batch = toImport.slice(offset, offset + importBatchSize);
+        const values = [];
+        const valueGroups = batch.map((contact, batchIndex) => {
+          const placeholders = fields.map((field, fieldIndex) => {
+            values.push(contact[field]);
+            return `$${batchIndex * fields.length + fieldIndex + 1}`;
+          });
+          return `(${placeholders.join(", ")})`;
+        });
         const result = await client.query(
-          "INSERT INTO contacts (name, company, email, phone, status, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, company, email, phone, status, notes, created_at, updated_at",
-          fields.map((field) => contact[field]),
+          `INSERT INTO contacts (name, company, email, phone, status, notes) VALUES ${valueGroups.join(", ")}
+           RETURNING id, name, company, email, phone, status, notes, created_at, updated_at`,
+          values,
         );
-        rows.push(result.rows[0]);
+        rows.push(...result.rows);
       }
       return rows;
     });
@@ -320,12 +333,6 @@ app.delete("/api/contacts/:id", async (request, response, next) => {
   }
 });
 
-if (process.env.NODE_ENV === "production") {
-  const clientDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
-  app.use(express.static(clientDir));
-  app.get("*path", (_request, response) => response.sendFile(path.join(clientDir, "index.html")));
-}
-
 app.use((error, _request, response, _next) => {
   console.error("Request failed:", error);
   if (error instanceof SyntaxError && "body" in error) {
@@ -336,13 +343,46 @@ app.use((error, _request, response, _next) => {
 });
 
 await initializeDatabase();
-const server = app.listen(port, "127.0.0.1", () => {
-  console.log(`CRM API listening on http://127.0.0.1:${port}`);
+const server = createHttpServer(app);
+const legacyFrontendServer = createHttpServer((request, response) => {
+  response.writeHead(302, { Location: `http://127.0.0.1:${port}${request.url || "/"}` });
+  response.end();
+});
+let vite;
+
+if (process.env.NODE_ENV === "production") {
+  const clientDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
+  app.use(express.static(clientDir));
+  app.get("*path", (_request, response) => response.sendFile(path.join(clientDir, "index.html")));
+} else {
+  const { createServer } = await import("vite");
+  vite = await createServer({
+    configFile: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../vite.config.js"),
+    appType: "spa",
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+    },
+  });
+  app.use(vite.middlewares);
+}
+
+server.listen(port, "127.0.0.1", () => {
+  console.log(`CRM ${process.env.NODE_ENV === "production" ? "app" : "development server"} listening on http://127.0.0.1:${port}`);
+});
+
+legacyFrontendServer.on("error", (error) => {
+  console.error("Could not start the legacy frontend address on port 5173:", error.message);
+});
+legacyFrontendServer.listen(5173, "127.0.0.1", () => {
+  console.log(`Legacy frontend address redirects to http://127.0.0.1:${port}`);
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
+    legacyFrontendServer.close();
     server.close(async () => {
+      await vite?.close();
       await closeDatabase();
       process.exit(0);
     });
