@@ -1,0 +1,29 @@
+{
+  "name": "local-crm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/local-postgres.js setup && concurrently -k -n api,web -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "test": "node --test src/contactsImport.test.js",
+    "start": "node scripts/local-postgres.js setup && NODE_ENV=production node server/index.js",
+    "db:setup": "node scripts/local-postgres.js setup",
+    "db:status": "node scripts/local-postgres.js status",
+    "db:stop": "node scripts/local-postgres.js stop"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.1",
+    "vite": "^6.3.5"
+  }
+}
