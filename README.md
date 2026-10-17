@@ -52,6 +52,7 @@ npm start
 ## Features
 
 - Create, edit, search, filter, and delete contacts
+- Choose which contact columns appear in the list; saved column preferences persist in the browser
 - Sign in to a single, private local account
 - Import up to 50,000 contacts per file from Google Contacts/Outlook CSV or standard vCard files (50 MB file size limit)
 - Automatically map names, companies, email addresses, phone numbers, and notes; new imports default to Lead

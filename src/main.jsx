@@ -4,6 +4,27 @@ import { MAX_IMPORT_CONTACTS, parseContactsFile } from "./contactsImport.js";
 import "./style.css";
 
 const emptyContact = { name: "", company: "", email: "", phone: "", status: "Lead", notes: "" };
+const columnPreferenceKey = "northstar-crm-contact-columns";
+const defaultVisibleColumns = ["company", "email", "phone", "status"];
+const contactColumns = [
+  { id: "company", label: "Company" },
+  { id: "email", label: "Email" },
+  { id: "phone", label: "Phone" },
+  { id: "status", label: "Status" },
+  { id: "notes", label: "Notes" },
+];
+
+function loadVisibleColumns() {
+  try {
+    const saved = window.localStorage.getItem(columnPreferenceKey);
+    if (saved === null) return defaultVisibleColumns;
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return defaultVisibleColumns;
+    return contactColumns.filter((column) => parsed.includes(column.id)).map((column) => column.id);
+  } catch {
+    return defaultVisibleColumns;
+  }
+}
 
 async function api(path, options = {}) {
   const response = await fetch(`/api${path}`, {
@@ -271,6 +292,8 @@ function Dashboard({ user, onSignOut }) {
   const [contacts, setContacts] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All contacts");
+  const [visibleColumns, setVisibleColumns] = useState(loadVisibleColumns);
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
   const [dialogContact, setDialogContact] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -285,6 +308,14 @@ function Dashboard({ user, onSignOut }) {
   useEffect(() => {
     refresh().catch((err) => setError(err.message)).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(columnPreferenceKey, JSON.stringify(visibleColumns));
+    } catch {
+      setError("Your column preferences could not be saved in this browser.");
+    }
+  }, [visibleColumns]);
 
   const counts = useMemo(() => ({
     total: contacts.length,
@@ -338,6 +369,13 @@ function Dashboard({ user, onSignOut }) {
   function openDialog(contact = null) {
     setDialogContact(contact);
     setDialogOpen(true);
+  }
+
+  function toggleColumn(columnId) {
+    setVisibleColumns((current) => current.includes(columnId)
+      ? current.filter((id) => id !== columnId)
+      : contactColumns.filter((column) => current.includes(column.id) || column.id === columnId).map((column) => column.id));
+    setError("");
   }
 
   return (
@@ -423,28 +461,77 @@ function Dashboard({ user, onSignOut }) {
                 </select>
                 <span className="select-chevron">⌄</span>
               </label>
+              <div className="column-picker">
+                <button
+                  className="button button-outline column-picker-button"
+                  type="button"
+                  aria-expanded={columnMenuOpen}
+                  aria-controls="contact-column-menu"
+                  onClick={() => setColumnMenuOpen((open) => !open)}
+                >
+                  Columns <span aria-hidden="true">⌄</span>
+                </button>
+                {columnMenuOpen && (
+                  <div className="column-menu" id="contact-column-menu" role="group" aria-label="Choose contact columns">
+                    <span className="column-menu-title">Show columns</span>
+                    <label className="column-option">
+                      <input type="checkbox" checked disabled />
+                      <span>Name</span>
+                      <small>Always shown</small>
+                    </label>
+                    {contactColumns.map((column) => (
+                      <label className="column-option" key={column.id}>
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns.includes(column.id)}
+                          onChange={() => toggleColumn(column.id)}
+                        />
+                        <span>{column.label}</span>
+                      </label>
+                    ))}
+                    <button
+                      className="column-reset"
+                      type="button"
+                      onClick={() => {
+                        setVisibleColumns(defaultVisibleColumns);
+                        setError("");
+                      }}
+                    >
+                      Restore default columns
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {notice && <div className="notice" role="status"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss message">×</button></div>}
             {error && <div className="alert" role="alert"><span>{error}</span><button onClick={() => setError("")} aria-label="Dismiss error">×</button></div>}
             <div className="table-wrap">
               <table>
-                <thead><tr><th><input type="checkbox" aria-label="Select all contacts" disabled /></th><th>NAME</th><th>COMPANY</th><th>EMAIL</th><th>PHONE</th><th>STATUS</th><th aria-label="Actions" /></tr></thead>
+                <thead><tr>
+                  <th><input type="checkbox" aria-label="Select all contacts" disabled /></th>
+                  <th className="column-name">NAME</th>
+                  {contactColumns.filter((column) => visibleColumns.includes(column.id)).map((column) => (
+                    <th className={`column-${column.id}`} key={column.id}>{column.label.toUpperCase()}</th>
+                  ))}
+                  <th aria-label="Actions" />
+                </tr></thead>
                 <tbody>
                   {loading ? (
-                    <tr><td className="empty-state" colSpan="7">Loading your contacts…</td></tr>
+                    <tr><td className="empty-state" colSpan={visibleColumns.length + 3}>Loading your contacts…</td></tr>
                   ) : filteredContacts.length ? filteredContacts.map((contact) => (
                     <tr key={contact.id}>
                       <td><input type="checkbox" aria-label={`Select ${contact.name}`} /></td>
                       <td><button className="contact-name" onClick={() => openDialog(contact)}><span className={`contact-avatar color-${Number(contact.id) % 5}`}>{initials(contact.name)}</span><span>{contact.name}</span></button></td>
-                      <td>{contact.company || <span className="muted">—</span>}</td>
-                      <td>{contact.email ? <a className="email-link" href={`mailto:${contact.email}`}>{contact.email}</a> : <span className="muted">—</span>}</td>
-                      <td>{contact.phone || <span className="muted">—</span>}</td>
-                      <td><span className={`status-pill status-${contact.status.toLowerCase()}`}><i />{contact.status}</span></td>
+                      {visibleColumns.includes("company") && <td>{contact.company || <span className="muted">—</span>}</td>}
+                      {visibleColumns.includes("email") && <td>{contact.email ? <a className="email-link" href={`mailto:${contact.email}`}>{contact.email}</a> : <span className="muted">—</span>}</td>}
+                      {visibleColumns.includes("phone") && <td>{contact.phone || <span className="muted">—</span>}</td>}
+                      {visibleColumns.includes("status") && <td><span className={`status-pill status-${contact.status.toLowerCase()}`}><i />{contact.status}</span></td>}
+                      {visibleColumns.includes("notes") && <td><span className="contact-notes" title={contact.notes}>{contact.notes || <span className="muted">—</span>}</span></td>}
                       <td><div className="row-actions"><button onClick={() => openDialog(contact)} aria-label={`Edit ${contact.name}`}>✎</button><button onClick={() => deleteContact(contact)} aria-label={`Delete ${contact.name}`}>×</button></div></td>
                     </tr>
                   )) : (
-                    <tr><td className="empty-state" colSpan="7">
+                    <tr><td className="empty-state" colSpan={visibleColumns.length + 3}>
                       {contacts.length ? "No contacts match your search." : "Your contact list is ready when you are."}
                       {!contacts.length && <button className="text-action" onClick={() => openDialog()}> Add your first contact</button>}
                     </td></tr>
