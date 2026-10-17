@@ -11,6 +11,7 @@
     "test": "node --test src/contactsImport.test.js",
     "start": "node scripts/local-postgres.js setup && NODE_ENV=production node server/index.js",
     "db:setup": "node scripts/local-postgres.js setup",
+    "db:dump": "node scripts/dump-database.js",
     "db:status": "node scripts/local-postgres.js status",
     "db:stop": "node scripts/local-postgres.js stop"
   },

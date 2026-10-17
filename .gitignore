@@ -1,4 +1,5 @@
 node_modules/
 dist/
 .env
+backups/*.dump
 npm-debug.log*

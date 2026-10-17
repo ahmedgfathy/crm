@@ -24,11 +24,16 @@ function initials(name) {
 function AuthScreen({ configured, onAuthenticate }) {
   const [email, setEmail] = useState("cernkey@outlook.com");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   async function submit(event) {
     event.preventDefault();
+    if (!configured && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -59,7 +64,15 @@ function AuthScreen({ configured, onAuthenticate }) {
         <form onSubmit={submit} className="auth-form">
           <label>
             Email address
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required autoFocus />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="username"
+              readOnly={!configured}
+              required
+              autoFocus
+            />
           </label>
           <label>
             Password
@@ -73,6 +86,19 @@ function AuthScreen({ configured, onAuthenticate }) {
             />
             {!configured && <small>Choose at least 12 characters. This password is not saved in the source code.</small>}
           </label>
+          {!configured && (
+            <label>
+              Confirm password
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                autoComplete="new-password"
+                minLength={12}
+                required
+              />
+            </label>
+          )}
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="button button-primary auth-submit" type="submit" disabled={busy}>
             {busy ? "Please wait…" : configured ? "Sign in" : "Create local account"}

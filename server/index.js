@@ -8,6 +8,7 @@ import { closeDatabase, initializeDatabase, query, withTransaction } from "./db.
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
+const localAccountEmail = "cernkey@outlook.com";
 const statuses = new Set(["Lead", "Active", "Inactive"]);
 const fields = ["name", "company", "email", "phone", "status", "notes"];
 const passwordLength = 64;
@@ -39,13 +40,21 @@ function getSession(request) {
   const [userIdText, expiresAtText, nonce] = payload.split(":");
   const userId = Number(userIdText);
   const expiresAt = Number(expiresAtText);
-  if (userId !== 1 || !nonce || !Number.isSafeInteger(expiresAt) || expiresAt < Date.now()) return null;
+  if (userId !== 1 || !nonce || !Number.isSafeInteger(expiresAt)) return null;
+  if (expiresAt < Date.now()) {
+    activeSessions.delete(nonce);
+    return null;
+  }
   if (activeSessions.get(nonce) !== expiresAt) return null;
   return { userId, nonce };
 }
 
 function setSession(response) {
-  const expiresAt = Date.now() + sessionLifetimeSeconds * 1000;
+  const now = Date.now();
+  for (const [nonce, expiry] of activeSessions) {
+    if (expiry < now) activeSessions.delete(nonce);
+  }
+  const expiresAt = now + sessionLifetimeSeconds * 1000;
   const nonce = randomBytes(24).toString("base64url");
   activeSessions.set(nonce, expiresAt);
   const payload = `1:${expiresAt}:${nonce}`;
@@ -106,6 +115,9 @@ app.post("/api/auth/setup", async (request, response, next) => {
   const password = request.body?.password;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return response.status(400).json({ error: "Enter a valid email address." });
+  }
+  if (email !== localAccountEmail) {
+    return response.status(400).json({ error: `The local account email is ${localAccountEmail}.` });
   }
   if (typeof password !== "string" || password.length < 12 || Buffer.byteLength(password) > 1024) {
     return response.status(400).json({ error: "Use a password with at least 12 characters." });
